@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | VCard Admin</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .login-form-wrap { animation: fadeIn 0.5s ease; }
+
+        .input-icon-wrap {
+            position: relative;
+        }
+        .input-icon-wrap .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+        .input-icon-wrap .form-control {
+            padding-left: 40px;
+        }
+        .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0;
+            transition: color 0.2s;
+        }
+        .toggle-password:hover { color: var(--text-primary); }
+
+        .login-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+        }
+        .login-divider::before,
+        .login-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .hint-box {
+            background: rgba(108, 99, 255, 0.06);
+            border: 1px solid rgba(108, 99, 255, 0.2);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            line-height: 1.8;
+        }
+        .hint-box strong { color: #a8a1ff; }
+    </style>
+</head>
+<body data-page="login">
+
+<div class="login-page">
+    <div class="login-card glass-card login-form-wrap">
+
+        <!-- Brand -->
+        <div class="brand">
+            <div class="logo-wrap">
+                <i class="fa-solid fa-id-card-clip"></i>
+            </div>
+            <h1>VCard <span class="text-gradient">Admin</span></h1>
+            <p>Sign in to manage your digital business cards</p>
+        </div>
+
+        <!-- Error Message -->
+        <div class="error-msg" id="error-msg">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span>Invalid email or password. Please try again.</span>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" autocomplete="on" novalidate>
+            <div class="form-group">
+                <label for="login-email">Email Address</label>
+                <div class="input-icon-wrap">
+                    <i class="fa-solid fa-envelope input-icon"></i>
+                    <input
+                        type="email"
+                        id="login-email"
+                        class="form-control"
+                        placeholder="admin@vcard.com"
+                        autocomplete="email"
+                        required
+                    >
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="login-password">Password</label>
+                <div class="input-icon-wrap">
+                    <i class="fa-solid fa-lock input-icon"></i>
+                    <input
+                        type="password"
+                        id="login-password"
+                        class="form-control"
+                        placeholder="••••••••"
+                        autocomplete="current-password"
+                        required
+                    >
+                    <button type="button" class="toggle-password" id="toggle-pass" aria-label="Show password">
+                        <i class="fa-solid fa-eye" id="toggle-pass-icon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-top: 8px;">
+                <i class="fa-solid fa-right-to-bracket"></i>
+                Sign In
+            </button>
+        </form>
+
+        <div class="login-divider">default credentials</div>
+
+        <div class="hint-box">
+            <strong>Email:</strong> admin@vcard.com<br>
+            <strong>Password:</strong> vcard@2024
+        </div>
+
+    </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="app.js"></script>
+<script>
+    // Toggle password visibility
+    document.getElementById('toggle-pass').addEventListener('click', () => {
+        const input = document.getElementById('login-password');
+        const icon  = document.getElementById('toggle-pass-icon');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'fa-solid fa-eye-slash';
+        } else {
+            input.type = 'password';
+            icon.className = 'fa-solid fa-eye';
+        }
+    });
+</script>
+</body>
+</html>

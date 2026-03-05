@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Digital Business Card</title>
+    <meta name="description" content="View this digital business card and save to contacts.">
+    <meta property="og:title" content="Digital Business Card">
+    <meta property="og:description" content="View and save this digital business card directly to your phone.">
+    <meta property="og:type" content="profile">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* Mobile-first, center everything */
+        body {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 24px 16px 40px;
+        }
+
+        /* Floating back-to-top subtle branding */
+        .card-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+            padding: 0 4px;
+        }
+
+        .card-top-bar .brand-text {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-top-logo {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: var(--accent-grad);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: #fff;
+        }
+
+        /* Loading skeleton pulse */
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 0.4;
+            }
+
+            50% {
+                opacity: 0.8;
+            }
+        }
+
+        .error-state {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 12px;
+            padding: 60px 20px;
+        }
+
+        .error-state .error-icon {
+            font-size: 3rem;
+        }
+
+        /* Social media specific colors on hover */
+        .quick-btn.wa:hover {
+            background: rgba(37, 211, 102, 0.1);
+        }
+
+        .quick-btn.call:hover {
+            background: rgba(34, 211, 165, 0.1);
+        }
+
+        .quick-btn.li:hover {
+            background: rgba(10, 102, 194, 0.1);
+        }
+
+        .quick-btn.email-btn:hover {
+            background: rgba(72, 208, 255, 0.08);
+        }
+
+        /* Save button pulse animation */
+        @keyframes pulse-btn {
+            0% {
+                box-shadow: 0 6px 28px rgba(108, 99, 255, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 6px 40px rgba(108, 99, 255, 0.7);
+            }
+
+            100% {
+                box-shadow: 0 6px 28px rgba(108, 99, 255, 0.4);
+            }
+        }
+
+        .save-btn {
+            animation: pulse-btn 2.5s ease-in-out infinite;
+        }
+
+        .save-btn:hover {
+            animation: none;
+        }
+    </style>
+</head>
+
+<body data-page="card">
+
+    <div class="vcard-container fade-in">
+
+        <!-- Minimal top bar -->
+        <div class="card-top-bar">
+            <div class="brand-text">
+                <div class="card-top-logo"><i class="fa-solid fa-id-card-clip"></i></div>
+                Digital Business Card
+            </div>
+            <span class="badge badge-accent" style="font-size:0.65rem;">
+                <i class="fa-solid fa-circle" style="font-size:0.4rem;color:var(--success);"></i> Live
+            </span>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading-state" class="loading-state">
+            <div class="spinner"></div>
+            <p style="font-size:0.85rem;">Loading contact…</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="error-state">
+            <div class="error-icon">🔗</div>
+            <h3>Invalid Link</h3>
+            <p style="font-size:0.85rem;"></p>
+        </div>
+
+        <!-- Card Content (hidden until data loads) -->
+        <div id="card-content" style="display:none;">
+
+            <!-- Profile Hero -->
+            <div class="profile-hero">
+                <div class="profile-photo-wrap">
+                    <img id="profile-photo" src="" alt="Profile Photo" class="profile-photo">
+                </div>
+                <div class="profile-name" id="profile-name">—</div>
+                <div class="profile-company" id="profile-company"></div>
+
+                <!-- Quick Action Buttons -->
+                <div class="quick-actions">
+                    <a class="quick-btn call" id="qbtn-call" href="#" style="display:none;">
+                        <i class="fa-solid fa-phone"></i>
+                        Call
+                    </a>
+                    <a class="quick-btn email-btn" id="qbtn-email" href="#" style="display:none;">
+                        <i class="fa-solid fa-envelope"></i>
+                        Email
+                    </a>
+                    <a class="quick-btn wa" id="qbtn-wa" href="#" target="_blank" rel="noopener" style="display:none;">
+                        <i class="fa-brands fa-whatsapp"></i>
+                        WhatsApp
+                    </a>
+                    <a class="quick-btn li" id="qbtn-linkedin" href="#" target="_blank" rel="noopener"
+                        style="display:none;">
+                        <i class="fa-brands fa-linkedin-in"></i>
+                        LinkedIn
+                    </a>
+                </div>
+            </div>
+
+            <!-- Detail Rows -->
+            <div class="details-section">
+
+                <a class="detail-item" id="det-phone" href="#" style="display:none;">
+                    <div class="detail-icon phone"><i class="fa-solid fa-phone"></i></div>
+                    <div class="detail-content">
+                        <div class="detail-label">Phone</div>
+                        <div class="detail-value"></div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right detail-arrow"></i>
+                </a>
+
+                <a class="detail-item" id="det-email" href="#" style="display:none;">
+                    <div class="detail-icon email"><i class="fa-solid fa-envelope"></i></div>
+                    <div class="detail-content">
+                        <div class="detail-label">Email</div>
+                        <div class="detail-value"></div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right detail-arrow"></i>
+                </a>
+
+                <a class="detail-item" id="det-website" href="#" target="_blank" rel="noopener" style="display:none;">
+                    <div class="detail-icon web"><i class="fa-solid fa-globe"></i></div>
+                    <div class="detail-content">
+                        <div class="detail-label">Website</div>
+                        <div class="detail-value"></div>
+                    </div>
+                    <i class="fa-solid fa-arrow-up-right-from-square detail-arrow"></i>
+                </a>
+
+                <a class="detail-item" id="det-linkedin" href="#" target="_blank" rel="noopener" style="display:none;">
+                    <div class="detail-icon linkedin"><i class="fa-brands fa-linkedin-in"></i></div>
+                    <div class="detail-content">
+                        <div class="detail-label">LinkedIn</div>
+                        <div class="detail-value"></div>
+                    </div>
+                    <i class="fa-solid fa-arrow-up-right-from-square detail-arrow"></i>
+                </a>
+
+                <a class="detail-item" id="det-wa" href="#" target="_blank" rel="noopener" style="display:none;">
+                    <div class="detail-icon wa"><i class="fa-brands fa-whatsapp"></i></div>
+                    <div class="detail-content">
+                        <div class="detail-label">WhatsApp</div>
+                        <div class="detail-value"></div>
+                    </div>
+                    <i class="fa-solid fa-arrow-up-right-from-square detail-arrow"></i>
+                </a>
+
+                <a class="detail-item" id="det-custom" href="#" target="_blank" rel="noopener" style="display:none;">
+                    <div class="detail-icon link"><i class="fa-solid fa-link"></i></div>
+                    <div class="detail-content">
+                        <div class="detail-label">Link</div>
+                        <div class="detail-value"></div>
+                    </div>
+                    <i class="fa-solid fa-arrow-up-right-from-square detail-arrow"></i>
+                </a>
+
+            </div>
+
+            <!-- CTA Section -->
+            <div class="cta-section">
+                <button class="save-btn" id="save-contact-btn">
+                    <i class="fa-solid fa-address-book"></i>
+                    Save to Contacts
+                </button>
+                <div class="powered-by">
+                    <i class="fa-solid fa-id-card-clip" style="margin-right:4px; color:var(--accent);"></i>
+                    Powered by VCard Manager
+                </div>
+            </div>
+
+        </div><!-- /card-content -->
+
+    </div><!-- /vcard-container -->
+
+    <div id="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard | VCard Manager</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        /* Photo upload area */
+        .photo-upload-area {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .photo-upload-area:hover {
+            border-color: var(--accent);
+            background: rgba(108, 99, 255, 0.05);
+        }
+
+        #photo-preview {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent);
+            flex-shrink: 0;
+        }
+
+        #photo-placeholder {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(108, 99, 255, 0.08);
+            border: 2px dashed rgba(108, 99, 255, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .photo-upload-text {
+            flex: 1;
+        }
+
+        .photo-upload-text h4 {
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+
+        .photo-upload-text p {
+            font-size: 0.78rem;
+        }
+
+        #f-photo {
+            display: none;
+        }
+
+        /* Section divider in form */
+        .form-section-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            padding: 8px 0 12px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 18px;
+            margin-top: 8px;
+        }
+
+        /* QR modal special layout */
+        .qr-modal-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .qr-modal-header p {
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .qr-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        /* Scrollable form */
+        .modal-box {
+            max-height: 88vh;
+        }
+
+        /* Search bar */
+        .search-wrap {
+            position: relative;
+            max-width: 320px;
+        }
+
+        .search-wrap i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .search-wrap input {
+            padding-left: 36px;
+        }
+    </style>
+</head>
+
+<body data-page="admin">
+
+    <!-- =========================================================
+     HEADER
+     ========================================================= -->
+    <header class="app-header">
+        <div class="app-logo">
+            <div class="logo-icon">
+                <i class="fa-solid fa-id-card-clip" style="color:#fff;font-size:1rem;"></i>
+            </div>
+            VCard Manager
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:0.8rem;color:var(--text-muted);" id="header-count"></span>
+            <button class="btn btn-primary" id="btn-add-customer" style="padding:10px 18px;font-size:0.85rem;">
+                <i class="fa-solid fa-plus"></i> Add Customer
+            </button>
+            <button class="btn btn-secondary btn-icon" id="btn-logout" title="Logout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- =========================================================
+     ADMIN BODY
+     ========================================================= -->
+    <div class="admin-layout">
+        <div class="admin-body">
+
+            <!-- Stats -->
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <span class="stat-label"><i class="fa-solid fa-users"></i> Total Cards</span>
+                    <span class="stat-value" id="customer-count">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label"><i class="fa-solid fa-qrcode"></i> QR Ready</span>
+                    <span class="stat-value" id="qr-count">0</span>
+                </div>
+                <div class="stat-card"
+                    style="background: linear-gradient(135deg, rgba(108,99,255,0.12), rgba(72,208,255,0.08)); border-color: rgba(108,99,255,0.2);">
+                    <span class="stat-label"><i class="fa-solid fa-bolt"></i> Platform Status</span>
+                    <span class="stat-value" style="font-size:1.1rem;color:var(--success);">Live ✓</span>
+                </div>
+            </div>
+
+            <!-- Section Header -->
+            <div class="section-header">
+                <h2>Customers &nbsp;<span class="badge badge-accent" id="list-count-badge">0</span></h2>
+                <div class="search-wrap">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="search" class="form-control" id="search-input" placeholder="Search customers…"
+                        style="font-size:0.85rem;">
+                </div>
+            </div>
+
+            <!-- Customer Grid -->
+            <div class="customer-grid" id="customer-grid"></div>
+
+        </div>
+    </div>
+
+    <!-- =========================================================
+     ADD / EDIT CUSTOMER MODAL
+     ========================================================= -->
+    <div class="modal-overlay" id="customer-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Customer</h2>
+                <button class="modal-close-btn" data-close-modal="customer-modal" aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="customer-form" novalidate>
+
+                <!-- Photo upload -->
+                <div class="form-group">
+                    <label>Profile Photo</label>
+                    <label class="photo-upload-area" for="f-photo">
+                        <img id="photo-preview" src="" alt="Preview" style="display:none;">
+                        <div id="photo-placeholder">
+                            <i class="fa-solid fa-camera"></i>
+                        </div>
+                        <div class="photo-upload-text">
+                            <h4>Upload Photo</h4>
+                            <p>Click to select · JPG, PNG, WEBP</p>
+                        </div>
+                        <input type="file" id="f-photo" accept="image/*">
+                    </label>
+                </div>
+
+                <div class="form-section-title"><i class="fa-solid fa-user"></i> &nbsp;Personal Info</div>
+
+                <div class="form-row">
+                    <div class="form-group" style="margin-bottom:0">
+                        <label for="f-name">Full Name <span style="color:var(--danger)">*</span></label>
+                        <input type="text" id="f-name" class="form-control" placeholder="Jane Doe" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0">
+                        <label for="f-title">Job Title</label>
+                        <input type="text" id="f-title" class="form-control" placeholder="CEO / Designer">
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top:16px;">
+                    <label for="f-company">Company / Organization</label>
+                    <input type="text" id="f-company" class="form-control" placeholder="Acme Inc.">
+                </div>
+
+                <div class="form-section-title" style="margin-top:4px;"><i class="fa-solid fa-address-book"></i>
+                    &nbsp;Contact Details</div>
+
+                <div class="form-row">
+                    <div class="form-group" style="margin-bottom:0">
+                        <label for="f-phone">Phone <span style="color:var(--danger)">*</span></label>
+                        <input type="tel" id="f-phone" class="form-control" placeholder="+91 98765 43210" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0">
+                        <label for="f-email">Email <span style="color:var(--danger)">*</span></label>
+                        <input type="email" id="f-email" class="form-control" placeholder="jane@acme.com" required>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top:16px;">
+                    <label for="f-website">Website URL</label>
+                    <input type="url" id="f-website" class="form-control" placeholder="https://janedoe.com">
+                </div>
+
+                <div class="form-section-title" style="margin-top:4px;"><i class="fa-solid fa-share-nodes"></i>
+                    &nbsp;Social & Links</div>
+
+                <div class="form-row">
+                    <div class="form-group" style="margin-bottom:0">
+                        <label for="f-linkedin">LinkedIn URL</label>
+                        <input type="url" id="f-linkedin" class="form-control" placeholder="https://linkedin.com/in/…">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0">
+                        <label for="f-whatsapp">WhatsApp Number</label>
+                        <input type="tel" id="f-whatsapp" class="form-control" placeholder="+91 98765 43210">
+                    </div>
+                </div>
+
+                <div class="form-row" style="margin-top:16px;">
+                    <div class="form-group" style="margin-bottom:0">
+                        <label for="f-custom-label">Custom Link Label</label>
+                        <input type="text" id="f-custom-label" class="form-control" placeholder="Portfolio, Brochure…">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0">
+                        <label for="f-custom-link">Custom Link URL</label>
+                        <input type="url" id="f-custom-link" class="form-control" placeholder="https://…">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close-modal="customer-modal"
+                        style="flex:1;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex:2;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Customer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- =========================================================
+     SHARE / QR MODAL
+     ========================================================= -->
+    <div class="modal-overlay" id="share-modal">
+        <div class="modal-box" style="max-width:460px; text-align:center;">
+            <div class="modal-header" style="justify-content:flex-end; margin-bottom:16px;">
+                <button class="modal-close-btn" data-close-modal="share-modal" aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="qr-modal-header">
+                <h2 style="font-size:1.2rem;">Share <span class="text-gradient" id="share-customer-name">Profile</span>
+                </h2>
+                <p style="color:var(--text-muted);font-size:0.85rem;">Scan this QR or copy the link to share the digital
+                    VCard</p>
+            </div>
+
+            <div class="qr-wrapper">
+                <div id="qrcode-container"></div>
+            </div>
+
+            <button class="btn btn-secondary btn-full" id="btn-download-qr" style="margin-bottom:16px;">
+                <i class="fa-solid fa-download"></i> Download QR Code
+            </button>
+
+            <div class="form-group" style="text-align:left;">
+                <label>Unique Card Link</label>
+                <div class="link-row">
+                    <button class="btn btn-secondary btn-icon" id="btn-copy-link" title="Copy link">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
+                    <input type="text" id="share-link-input" class="form-control" readonly>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+     DELETE CONFIRM MODAL
+     ========================================================= -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal-box" style="max-width:380px; text-align:center;">
+            <div style="font-size:3rem; margin-bottom:12px;">🗑️</div>
+            <h2 style="margin-bottom:8px;">Delete Customer?</h2>
+            <p style="font-size:0.9rem; margin-bottom:28px;">
+                Are you sure you want to delete <strong id="delete-customer-name"
+                    style="color:var(--text-primary)"></strong>? This action cannot be undone.
+            </p>
+            <div class="modal-footer" style="margin-top:0;">
+                <button class="btn btn-secondary" data-close-modal="delete-modal" style="flex:1;">Cancel</button>
+                <button class="btn btn-danger" id="confirm-delete-btn" style="flex:1.5;">
+                    <i class="fa-solid fa-trash"></i> Yes, Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="app.js"></script>
+    <script>
+        // Live search filter
+        document.getElementById('search-input').addEventListener('input', function () {
+            const q = this.value.toLowerCase();
+            document.querySelectorAll('.customer-card').forEach(card => {
+                const name = card.querySelector('h4')?.textContent.toLowerCase() || '';
+                const email = card.querySelector('p')?.textContent.toLowerCase() || '';
+                card.style.display = (name.includes(q) || email.includes(q)) ? 'flex' : 'none';
+            });
+        });
+
+        // Keep header count synced
+        const origRender = renderCustomers;
+        document.addEventListener('DOMContentLoaded', () => {
+            // Sync QR count and badge after render
+            const observer = new MutationObserver(() => {
+                const count = customers.length;
+                const el = document.getElementById('header-count');
+                const badge = document.getElementById('list-count-badge');
+                const qrEl = document.getElementById('qr-count');
+                if (el) el.textContent = count === 1 ? '1 card' : `${count} cards`;
+                if (badge) badge.textContent = count;
+                if (qrEl) qrEl.textContent = count;
+            });
+            observer.observe(document.getElementById('customer-grid'), { childList: true, subtree: true });
+        });
+    </script>
+</body>
+
+</html>
