@@ -4,13 +4,30 @@
  */
 
 // =====================================================
-//  Constants
+//  Constants & Firebase Initialization
 // =====================================================
 const CREDENTIALS = { email: 'admin@vcard.com', password: 'vcard@2024' };
-const STORAGE_KEY  = 'bvc_customers';
-const SESSION_KEY  = 'bvc_session';
+const SESSION_KEY = 'bvc_session';
+const FB_KEY = 'bvc_firebase_config';
 
-// =====================================================
+let db = null;
+
+function initFirebase() {
+    const configStr = localStorage.getItem(FB_KEY);
+    if (!configStr) return false;
+
+    try {
+        const config = JSON.parse(configStr);
+        if (!firebase.apps.length) {
+            firebase.initializeApp(config);
+        }
+        db = firebase.database();
+        return true;
+    } catch (e) {
+        console.error("Firebase init failed:", e);
+        return false;
+    }
+}
 //  Session / Auth
 // =====================================================
 function isLoggedIn() {
@@ -37,48 +54,51 @@ function requireAuth() {
 }
 
 // =====================================================
-//  Data Persistence
+//  Data Persistence (Firebase)
 // =====================================================
-function loadCustomers() {
+async function loadCustomers() {
+    if (!db) return [];
     try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    } catch { return []; }
+        const snapshot = await db.ref('customers').once('value');
+        const data = snapshot.val();
+        if (!data) return [];
+        return Object.values(data);
+    } catch (e) {
+        console.error("Failed to load customers:", e);
+        showToast('Error loading from Firebase', 'error');
+        return [];
+    }
 }
 
-function saveCustomers(list) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+async function saveCustomers(list) {
+    if (!db) return;
+    try {
+        const updates = {};
+        list.forEach(c => { updates[c.id] = c; });
+        await db.ref('customers').set(updates);
+    } catch (e) {
+        console.error("Failed to save to Firebase:", e);
+        showToast('Error saving to Firebase', 'error');
+    }
 }
 
 // =====================================================
-//  Data Encoding / Decoding
+//  Data Encoding / Decoding (Legacy Fallback)
 // =====================================================
 function encodeData(data) {
-    try {
-        const json = JSON.stringify(data);
-        return btoa(unescape(encodeURIComponent(json)));
-    } catch (e) {
-        console.error('Encode error', e);
-        return '';
-    }
+    try { return btoa(unescape(encodeURIComponent(JSON.stringify(data)))); } catch { return ''; }
 }
 
 function decodeData(hash) {
-    try {
-        const json = decodeURIComponent(escape(atob(hash)));
-        return JSON.parse(json);
-    } catch (e) {
-        console.error('Decode error', e);
-        return null;
-    }
+    try { return JSON.parse(decodeURIComponent(escape(atob(hash)))); } catch { return null; }
 }
 
 // =====================================================
-//  URL Builder
+//  URL Builder (Using IDs instead of huge hashes)
 // =====================================================
 function buildCardURL(data) {
-    const hash  = encodeData(data);
-    const base  = window.location.href.replace(/\/[^\/]*$/, '/');
-    return `${base}card.html#${hash}`;
+    const base = window.location.href.replace(/\/[^\/]*$/, '/');
+    return `${base}card.html?id=${data.id}`;
 }
 
 // =====================================================
@@ -115,11 +135,11 @@ function generateVCard(data) {
 
 function downloadVCard(data) {
     const content = generateVCard(data);
-    const blob    = new Blob([content], { type: 'text/vcard;charset=utf-8' });
-    const url     = URL.createObjectURL(blob);
-    const a       = document.createElement('a');
-    a.href        = url;
-    a.download    = `${(data.name || 'contact').replace(/\s+/g, '_')}.vcf`;
+    const blob = new Blob([content], { type: 'text/vcard;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(data.name || 'contact').replace(/\s+/g, '_')}.vcf`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -181,14 +201,21 @@ function closeModal(id) {
 // =====================================================
 //  ADMIN PAGE LOGIC
 // =====================================================
-let customers    = [];
-let editingId    = null;
-let shareUrl     = '';
+let customers = [];
+let editingId = null;
+let shareUrl = '';
 
-function initAdmin() {
+async function initAdmin() {
     requireAuth();
-    customers = loadCustomers();
-    renderCustomers();
+
+    // Check Firebase
+    if (!initFirebase()) {
+        openModal('settings-modal');
+    } else {
+        customers = await loadCustomers();
+        renderCustomers();
+    }
+
     bindAdminEvents();
 }
 
@@ -247,21 +274,21 @@ function openEditModal(id) {
     editingId = id;
 
     document.getElementById('modal-title').textContent = 'Edit Customer';
-    document.getElementById('f-name').value        = c.name        || '';
-    document.getElementById('f-company').value     = c.company     || '';
-    document.getElementById('f-title').value       = c.title       || '';
-    document.getElementById('f-phone').value       = c.phone       || '';
-    document.getElementById('f-email').value       = c.email       || '';
-    document.getElementById('f-website').value     = c.website     || '';
-    document.getElementById('f-linkedin').value    = c.linkedin    || '';
-    document.getElementById('f-whatsapp').value    = c.whatsapp    || '';
+    document.getElementById('f-name').value = c.name || '';
+    document.getElementById('f-company').value = c.company || '';
+    document.getElementById('f-title').value = c.title || '';
+    document.getElementById('f-phone').value = c.phone || '';
+    document.getElementById('f-email').value = c.email || '';
+    document.getElementById('f-website').value = c.website || '';
+    document.getElementById('f-linkedin').value = c.linkedin || '';
+    document.getElementById('f-whatsapp').value = c.whatsapp || '';
     document.getElementById('f-custom-label').value = c.customLabel || '';
-    document.getElementById('f-custom-link').value = c.customLink  || '';
+    document.getElementById('f-custom-link').value = c.customLink || '';
 
     // Restore photo preview
     if (c.photo) {
         const preview = document.getElementById('photo-preview');
-        preview.src   = c.photo;
+        preview.src = c.photo;
         preview.style.display = 'block';
         document.getElementById('photo-placeholder').style.display = 'none';
     } else {
@@ -272,42 +299,59 @@ function openEditModal(id) {
 }
 
 /* Save customer (create or update) */
-function handleCustomerSubmit(e) {
+async function handleCustomerSubmit(e) {
     e.preventDefault();
 
-    const photoEl = document.getElementById('photo-preview');
-    const photo   = (photoEl.style.display !== 'none' && photoEl.src && !photoEl.src.endsWith('#')) ? photoEl.src : '';
-
-    const customer = {
-        id:          editingId || Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        name:        document.getElementById('f-name').value.trim(),
-        company:     document.getElementById('f-company').value.trim(),
-        title:       document.getElementById('f-title').value.trim(),
-        phone:       document.getElementById('f-phone').value.trim(),
-        email:       document.getElementById('f-email').value.trim(),
-        website:     document.getElementById('f-website').value.trim(),
-        linkedin:    document.getElementById('f-linkedin').value.trim(),
-        whatsapp:    document.getElementById('f-whatsapp').value.trim(),
-        customLabel: document.getElementById('f-custom-label').value.trim(),
-        customLink:  document.getElementById('f-custom-link').value.trim(),
-        photo,
-        createdAt: editingId
-            ? (customers.find(c=>c.id===editingId)?.createdAt || Date.now())
-            : Date.now()
-    };
-
-    if (editingId) {
-        const idx = customers.findIndex(c => c.id === editingId);
-        if (idx > -1) customers[idx] = customer;
-        showToast('Customer updated successfully!', 'success');
-    } else {
-        customers.push(customer);
-        showToast('Customer created successfully!', 'success');
+    if (!db) {
+        showToast('Firebase not connected! Please provide config in Settings.', 'error');
+        return;
     }
 
-    saveCustomers(customers);
-    closeModal('customer-modal');
-    renderCustomers();
+    const btn = document.querySelector('#customer-form button[type="submit"]');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    btn.disabled = true;
+
+    try {
+        const photoEl = document.getElementById('photo-preview');
+        const photo = (photoEl.style.display !== 'none' && photoEl.src && !photoEl.src.endsWith('#')) ? photoEl.src : '';
+
+        const customer = {
+            id: editingId || `u_${Date.now().toString(36)}`,
+            name: document.getElementById('f-name').value.trim(),
+            company: document.getElementById('f-company').value.trim(),
+            title: document.getElementById('f-title').value.trim(),
+            phone: document.getElementById('f-phone').value.trim(),
+            email: document.getElementById('f-email').value.trim(),
+            website: document.getElementById('f-website').value.trim(),
+            linkedin: document.getElementById('f-linkedin').value.trim(),
+            whatsapp: document.getElementById('f-whatsapp').value.trim(),
+            customLabel: document.getElementById('f-custom-label').value.trim(),
+            customLink: document.getElementById('f-custom-link').value.trim(),
+            photo,
+            createdAt: editingId
+                ? (customers.find(c => c.id === editingId)?.createdAt || Date.now())
+                : Date.now()
+        };
+
+        if (editingId) {
+            const idx = customers.findIndex(c => c.id === editingId);
+            if (idx > -1) customers[idx] = customer;
+        } else {
+            customers.push(customer);
+        }
+
+        await saveCustomers(customers);
+        showToast(editingId ? 'Customer updated!' : 'Customer created!', 'success');
+
+        closeModal('customer-modal');
+        renderCustomers();
+    } catch (e) {
+        showToast('Error saving data', 'error');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
 }
 
 /* Delete customer */
@@ -315,14 +359,20 @@ function confirmDelete(id) {
     const c = customers.find(x => x.id === id);
     if (!c) return;
 
-    // Show confirm in delete modal
     document.getElementById('delete-customer-name').textContent = c.name;
-    document.getElementById('confirm-delete-btn').onclick = () => {
+    document.getElementById('confirm-delete-btn').onclick = async () => {
+        if (!db) return;
+
+        const btn = document.getElementById('confirm-delete-btn');
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
         customers = customers.filter(x => x.id !== id);
-        saveCustomers(customers);
+        await db.ref(`customers/${id}`).remove();
+
         closeModal('delete-modal');
         renderCustomers();
         showToast('Customer deleted.', 'info');
+        btn.innerHTML = 'Yes, Delete';
     };
     openModal('delete-modal');
 }
@@ -349,14 +399,14 @@ function copyShareLink() {
 
 function downloadQR() {
     const canvas = document.querySelector('#qrcode-container canvas');
-    const img    = document.querySelector('#qrcode-container img');
-    const link   = document.createElement('a');
+    const img = document.querySelector('#qrcode-container img');
+    const link = document.createElement('a');
 
     if (canvas) {
-        link.href     = canvas.toDataURL('image/png');
+        link.href = canvas.toDataURL('image/png');
         link.download = 'vcard_qr.png';
     } else if (img) {
-        link.href     = img.src;
+        link.href = img.src;
         link.download = 'vcard_qr.png';
     }
 
@@ -372,7 +422,7 @@ function handlePhotoUpload(e) {
     const reader = new FileReader();
     reader.onload = (ev) => {
         const preview = document.getElementById('photo-preview');
-        preview.src   = ev.target.result;
+        preview.src = ev.target.result;
         preview.style.display = 'block';
         document.getElementById('photo-placeholder').style.display = 'none';
     };
@@ -381,7 +431,7 @@ function handlePhotoUpload(e) {
 
 function resetPhotoPreview() {
     const preview = document.getElementById('photo-preview');
-    preview.src   = '';
+    preview.src = '';
     preview.style.display = 'none';
     document.getElementById('photo-placeholder').style.display = 'flex';
 }
@@ -393,6 +443,28 @@ function bindAdminEvents() {
 
     // Logout
     document.getElementById('btn-logout')?.addEventListener('click', logout);
+
+    // Settings Settings Open
+    document.getElementById('btn-settings')?.addEventListener('click', () => {
+        document.getElementById('fb-config').value = localStorage.getItem(FB_KEY) || '';
+        openModal('settings-modal');
+    });
+
+    // Save Settings Form
+    document.getElementById('settings-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        try {
+            const val = document.getElementById('fb-config').value.trim();
+            const config = JSON.parse(val); // ensure valid JSON
+            localStorage.setItem(FB_KEY, JSON.stringify(config));
+            closeModal('settings-modal');
+
+            showToast('Firebase connected! Reloading...', 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } catch (err) {
+            showToast('Invalid JSON structure.', 'error');
+        }
+    });
 
     // Customer form submit
     document.getElementById('customer-form')?.addEventListener('submit', handleCustomerSubmit);
@@ -424,17 +496,39 @@ function bindAdminEvents() {
 // =====================================================
 //  CARD/LANDING PAGE LOGIC
 // =====================================================
-function initCard() {
+async function initCard() {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
     const hash = window.location.hash.substring(1);
 
-    if (!hash) {
+    if (!id && !hash) {
         showCardError('No contact data found in this link. Please scan the correct QR code.');
         return;
     }
 
-    const data = decodeData(hash);
+    let data = null;
+
+    if (id) {
+        // Fetch from Firebase
+        initFirebase();
+        if (!db) {
+            showCardError('Database not configured. Cannot load profile.');
+            return;
+        }
+
+        try {
+            const snapshot = await db.ref(`customers/${id}`).once('value');
+            data = snapshot.val();
+        } catch (e) {
+            console.error("Firebase fetch error", e);
+        }
+    } else if (hash) {
+        // Legacy fallback for old URL hashes
+        data = decodeData(hash);
+    }
+
     if (!data) {
-        showCardError('This link appears to be invalid or corrupted.');
+        showCardError('This link appears to be invalid or corrupted. Profile not found.');
         return;
     }
 
@@ -448,7 +542,7 @@ function initCard() {
 
 function renderCard(data) {
     document.getElementById('loading-state').style.display = 'none';
-    document.getElementById('card-content').style.display  = 'block';
+    document.getElementById('card-content').style.display = 'block';
 
     // Meta
     document.title = `${data.name} | Digital Business Card`;
@@ -464,15 +558,15 @@ function renderCard(data) {
         photo.src = getInitialsAvatar(data.name);
     }
 
-    document.getElementById('profile-name').textContent    = data.name    || 'Name';
+    document.getElementById('profile-name').textContent = data.name || 'Name';
     document.getElementById('profile-company').textContent = data.company
         ? (data.title ? `${data.title} @ ${data.company}` : data.company)
         : (data.title || '');
 
     // Quick action links
-    setLink('qbtn-call',  `tel:${data.phone}`,      data.phone);
-    setLink('qbtn-email', `mailto:${data.email}`,   data.email);
-    setLink('qbtn-wa',    `https://wa.me/${(data.whatsapp || data.phone || '').replace(/\D/g,'')}`, data.whatsapp || data.phone);
+    setLink('qbtn-call', `tel:${data.phone}`, data.phone);
+    setLink('qbtn-email', `mailto:${data.email}`, data.email);
+    setLink('qbtn-wa', `https://wa.me/${(data.whatsapp || data.phone || '').replace(/\D/g, '')}`, data.whatsapp || data.phone);
 
     if (data.linkedin) {
         const liBtn = document.getElementById('qbtn-linkedin');
@@ -484,7 +578,7 @@ function renderCard(data) {
     setDetailRow('det-email', data.email, `mailto:${data.email}`);
     setDetailRow('det-website', data.website && data.website.replace(/^https?:\/\//, ''), data.website);
     setDetailRow('det-linkedin', data.linkedin && prettyLink(data.linkedin), data.linkedin);
-    setDetailRow('det-wa',  data.whatsapp, `https://wa.me/${(data.whatsapp||'').replace(/\D/g,'')}`);
+    setDetailRow('det-wa', data.whatsapp, `https://wa.me/${(data.whatsapp || '').replace(/\D/g, '')}`);
     setDetailRow('det-custom', data.customLabel ? `${data.customLabel}` : data.customLink && prettyLink(data.customLink), data.customLink);
 }
 
@@ -523,7 +617,7 @@ function getInitialsAvatar(name) {
 }
 
 function showCardError(msg) {
-    document.getElementById('loading-state').style.display  = 'none';
+    document.getElementById('loading-state').style.display = 'none';
     const err = document.getElementById('error-state');
     if (err) {
         err.style.display = 'flex';
@@ -541,13 +635,13 @@ function initLogin() {
         return;
     }
 
-    const form   = document.getElementById('login-form');
+    const form = document.getElementById('login-form');
     const errMsg = document.getElementById('error-msg');
 
     form?.addEventListener('submit', (e) => {
         e.preventDefault();
         const email = document.getElementById('login-email').value.trim();
-        const pass  = document.getElementById('login-password').value;
+        const pass = document.getElementById('login-password').value;
 
         if (login(email, pass)) {
             window.location.href = 'admin.html';
@@ -559,7 +653,7 @@ function initLogin() {
     });
 
     // Hide error on input
-    document.getElementById('login-email')?.addEventListener('input',    () => errMsg.classList.remove('show'));
+    document.getElementById('login-email')?.addEventListener('input', () => errMsg.classList.remove('show'));
     document.getElementById('login-password')?.addEventListener('input', () => errMsg.classList.remove('show'));
 }
 
@@ -568,7 +662,7 @@ function initLogin() {
 // =====================================================
 document.addEventListener('DOMContentLoaded', () => {
     const page = document.body.dataset.page;
-    if (page === 'login')  initLogin();
-    if (page === 'admin')  initAdmin();
-    if (page === 'card')   initCard();
+    if (page === 'login') initLogin();
+    if (page === 'admin') initAdmin();
+    if (page === 'card') initCard();
 });
