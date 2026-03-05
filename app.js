@@ -13,13 +13,20 @@ const FB_KEY = 'bvc_firebase_config';
 let db = null;
 
 function initFirebase() {
-    const configStr = localStorage.getItem(FB_KEY);
-    if (!configStr) return false;
+    const firebaseConfig = {
+        apiKey: "AIzaSyATSMf9-oYQaJ2QKNRP0V9lluolBPD8e0I",
+        authDomain: "qr-code-builder-7e8cd.firebaseapp.com",
+        databaseURL: "https://qr-code-builder-7e8cd-default-rtdb.firebaseio.com",
+        projectId: "qr-code-builder-7e8cd",
+        storageBucket: "qr-code-builder-7e8cd.firebasestorage.app",
+        messagingSenderId: "699915597337",
+        appId: "1:699915597337:web:e035a768e96780b89e1c88",
+        measurementId: "G-SGMTPHY3RT"
+    };
 
     try {
-        const config = JSON.parse(configStr);
         if (!firebase.apps.length) {
-            firebase.initializeApp(config);
+            firebase.initializeApp(firebaseConfig);
         }
         db = firebase.database();
         return true;
@@ -208,12 +215,14 @@ let shareUrl = '';
 async function initAdmin() {
     requireAuth();
 
-    // Check Firebase
-    if (!initFirebase()) {
-        openModal('settings-modal');
-    } else {
+    // Init Firebase
+    initFirebase();
+
+    if (db) {
         customers = await loadCustomers();
         renderCustomers();
+    } else {
+        showToast("Database connection failed. Please check config.", "error");
     }
 
     bindAdminEvents();
@@ -443,28 +452,6 @@ function bindAdminEvents() {
 
     // Logout
     document.getElementById('btn-logout')?.addEventListener('click', logout);
-
-    // Settings Settings Open
-    document.getElementById('btn-settings')?.addEventListener('click', () => {
-        document.getElementById('fb-config').value = localStorage.getItem(FB_KEY) || '';
-        openModal('settings-modal');
-    });
-
-    // Save Settings Form
-    document.getElementById('settings-form')?.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        try {
-            const val = document.getElementById('fb-config').value.trim();
-            const config = JSON.parse(val); // ensure valid JSON
-            localStorage.setItem(FB_KEY, JSON.stringify(config));
-            closeModal('settings-modal');
-
-            showToast('Firebase connected! Reloading...', 'success');
-            setTimeout(() => window.location.reload(), 1000);
-        } catch (err) {
-            showToast('Invalid JSON structure.', 'error');
-        }
-    });
 
     // Customer form submit
     document.getElementById('customer-form')?.addEventListener('submit', handleCustomerSubmit);

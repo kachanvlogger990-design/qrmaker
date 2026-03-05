@@ -144,10 +144,6 @@
 
         <div style="display:flex;align-items:center;gap:10px;">
             <span style="font-size:0.8rem;color:var(--text-muted);" id="header-count"></span>
-            <button class="btn btn-secondary btn-icon" id="btn-settings" title="Firebase Settings"
-                style="margin-right:8px;">
-                <i class="fa-solid fa-gear"></i>
-            </button>
             <button class="btn btn-primary" id="btn-add-customer" style="padding:10px 18px;font-size:0.85rem;">
                 <i class="fa-solid fa-plus"></i> Add Customer
             </button>
@@ -354,43 +350,6 @@
                     <i class="fa-solid fa-trash"></i> Yes, Delete
                 </button>
             </div>
-        </div>
-    </div>
-
-    <!-- =========================================================
-     FIREBASE SETTINGS MODAL
-     ========================================================= -->
-    <div class="modal-overlay" id="settings-modal">
-        <div class="modal-box" style="max-width:500px;">
-            <div class="modal-header">
-                <h2>⚙️ Firebase Configuration</h2>
-                <button class="modal-close-btn" data-close-modal="settings-modal" aria-label="Close">
-                    <i class="fa-solid fa-xmark"></i>
-                </button>
-            </div>
-
-            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:20px;">
-                Connect to your own free Firebase Realtime Database to store customer data globally.
-                All QR codes will instantly link to live cloud data.
-            </p>
-
-            <form id="settings-form">
-                <div class="form-group">
-                    <label for="fb-config">Firebase Config Object (Paste JSON here)</label>
-                    <textarea id="fb-config" class="form-control" rows="8"
-                        style="font-family: monospace; font-size: 0.8rem;"
-                        placeholder='{&#10;  "apiKey": "AIzaSy...",&#10;  "authDomain": "app.firebaseapp.com",&#10;  "databaseURL": "https://app.firebaseio.com",&#10;  "projectId": "app",&#10;  "storageBucket": "app.appspot.com",&#10;  "messagingSenderId": "123",&#10;  "appId": "1:123:web:abc"&#10;}'
-                        required></textarea>
-                </div>
-
-                <div class="modal-footer" style="margin-top:24px;">
-                    <button type="button" class="btn btn-secondary" data-close-modal="settings-modal"
-                        style="flex:1;">Cancel</button>
-                    <button type="submit" class="btn btn-primary" style="flex:2;">
-                        <i class="fa-solid fa-cloud-arrow-up"></i> Save & Connect
-                    </button>
-                </div>
-            </form>
         </div>
     </div>
 
