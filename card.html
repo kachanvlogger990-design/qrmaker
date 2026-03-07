@@ -98,6 +98,10 @@
             background: rgba(72, 208, 255, 0.08);
         }
 
+        .quick-btn.map:hover {
+            background: rgba(255, 107, 107, 0.1);
+        }
+
         /* Save button pulse animation */
         @keyframes pulse-btn {
             0% {
@@ -172,6 +176,11 @@
                         <i class="fa-solid fa-envelope"></i>
                         Email
                     </a>
+                    <a class="quick-btn map" id="qbtn-location" href="#" target="_blank" rel="noopener"
+                        style="display:none; color:#ff6b6b;">
+                        <i class="fa-solid fa-location-dot"></i>
+                        Location
+                    </a>
                     <a class="quick-btn wa" id="qbtn-wa" href="#" target="_blank" rel="noopener" style="display:none;">
                         <i class="fa-brands fa-whatsapp"></i>
                         WhatsApp
@@ -209,6 +218,16 @@
                     <div class="detail-icon web"><i class="fa-solid fa-globe"></i></div>
                     <div class="detail-content">
                         <div class="detail-label">Website</div>
+                        <div class="detail-value"></div>
+                    </div>
+                    <i class="fa-solid fa-arrow-up-right-from-square detail-arrow"></i>
+                </a>
+
+                <a class="detail-item" id="det-location" href="#" target="_blank" rel="noopener" style="display:none;">
+                    <div class="detail-icon map" style="background:rgba(255, 107, 107, 0.1); color:#ff6b6b;"><i
+                            class="fa-solid fa-location-dot"></i></div>
+                    <div class="detail-content">
+                        <div class="detail-label">Location Address</div>
                         <div class="detail-value"></div>
                     </div>
                     <i class="fa-solid fa-arrow-up-right-from-square detail-arrow"></i>

@@ -186,7 +186,7 @@ function renderQR(containerId, url) {
         text: url,
         width: 220,
         height: 220,
-        colorDark: '#6c63ff',
+        colorDark: '#000000',
         colorLight: '#ffffff',
         correctLevel: QRCode.CorrectLevel.H
     });
@@ -289,6 +289,7 @@ function openEditModal(id) {
     document.getElementById('f-phone').value = c.phone || '';
     document.getElementById('f-email').value = c.email || '';
     document.getElementById('f-website').value = c.website || '';
+    document.getElementById('f-location').value = c.location || '';
     document.getElementById('f-linkedin').value = c.linkedin || '';
     document.getElementById('f-whatsapp').value = c.whatsapp || '';
     document.getElementById('f-custom-label').value = c.customLabel || '';
@@ -333,6 +334,7 @@ async function handleCustomerSubmit(e) {
             phone: document.getElementById('f-phone').value.trim(),
             email: document.getElementById('f-email').value.trim(),
             website: document.getElementById('f-website').value.trim(),
+            location: document.getElementById('f-location').value.trim(),
             linkedin: document.getElementById('f-linkedin').value.trim(),
             whatsapp: document.getElementById('f-whatsapp').value.trim(),
             customLabel: document.getElementById('f-custom-label').value.trim(),
@@ -554,6 +556,7 @@ function renderCard(data) {
     setLink('qbtn-call', `tel:${data.phone}`, data.phone);
     setLink('qbtn-email', `mailto:${data.email}`, data.email);
     setLink('qbtn-wa', `https://wa.me/${(data.whatsapp || data.phone || '').replace(/\D/g, '')}`, data.whatsapp || data.phone);
+    setLink('qbtn-location', data.location, data.location);
 
     if (data.linkedin) {
         const liBtn = document.getElementById('qbtn-linkedin');
@@ -564,6 +567,7 @@ function renderCard(data) {
     setDetailRow('det-phone', data.phone, `tel:${data.phone}`);
     setDetailRow('det-email', data.email, `mailto:${data.email}`);
     setDetailRow('det-website', data.website && data.website.replace(/^https?:\/\//, ''), data.website);
+    setDetailRow('det-location', data.location && 'View on Map', data.location);
     setDetailRow('det-linkedin', data.linkedin && prettyLink(data.linkedin), data.linkedin);
     setDetailRow('det-wa', data.whatsapp, `https://wa.me/${(data.whatsapp || '').replace(/\D/g, '')}`);
     setDetailRow('det-custom', data.customLabel ? `${data.customLabel}` : data.customLink && prettyLink(data.customLink), data.customLink);
