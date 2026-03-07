@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Menu Admin | QR Manager</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <style>
+        .photo-upload-area {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .photo-upload-area:hover {
+            border-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.05);
+        }
+
+        .photo-preview {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid #ff6b6b;
+            flex-shrink: 0;
+            display: none;
+        }
+
+        .photo-placeholder {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            background: rgba(255, 107, 107, 0.08);
+            border: 2px dashed rgba(255, 107, 107, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 1.4rem;
+            flex-shrink: 0;
+        }
+
+        .photo-upload-text {
+            flex: 1;
+        }
+
+        .photo-upload-text h4 {
+            font-size: 0.9rem;
+            margin-bottom: 2px;
+        }
+
+        .photo-upload-text p {
+            font-size: 0.78rem;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .form-section-title {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            padding: 8px 0 12px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 18px;
+            margin-top: 8px;
+        }
+
+        .qr-modal-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .qr-modal-header p {
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+
+        .qr-wrapper {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-box {
+            max-height: 88vh;
+        }
+
+        .search-wrap {
+            position: relative;
+            max-width: 320px;
+        }
+
+        .search-wrap i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .search-wrap input {
+            padding-left: 36px;
+        }
+
+        /* Restaurant specific styling */
+        .app-logo .logo-icon {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+        }
+
+        .badge-accent {
+            background: rgba(255, 107, 107, 0.15);
+            color: #ff8e53;
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.35);
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 6px 28px rgba(255, 107, 107, 0.5);
+        }
+
+        .customer-avatar {
+            border-radius: 12px;
+            border-color: #ff6b6b;
+        }
+
+        /* Menu Builder Styling */
+        .mb-category {
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .mb-cat-header {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .mb-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .mb-item-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 12px;
+            margin-bottom: 8px;
+        }
+
+        .mb-remove-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            padding: 8px;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 44px;
+        }
+
+        .mb-remove-btn:hover {
+            opacity: 1;
+            background: rgba(255, 79, 107, 0.1);
+        }
+    </style>
+</head>
+
+<body data-page="restaurant-admin">
+
+    <!-- HEADER -->
+    <header class="app-header">
+        <div class="app-logo">
+            <div class="logo-icon">
+                <i class="fa-solid fa-utensils" style="color:#fff;font-size:1rem;"></i>
+            </div>
+            Menu Manager
+        </div>
+
+        <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:0.8rem;color:var(--text-muted);" id="header-count"></span>
+            <button class="btn btn-primary" id="btn-add-menu" style="padding:10px 18px;font-size:0.85rem;">
+                <i class="fa-solid fa-plus"></i> Add Menu
+            </button>
+            <button class="btn btn-secondary btn-icon" id="btn-logout" title="Logout">
+                <i class="fa-solid fa-right-from-bracket"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ADMIN BODY -->
+    <div class="admin-layout">
+        <div class="admin-body">
+
+            <!-- Stats -->
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <span class="stat-label"><i class="fa-solid fa-file-lines"></i> Total Menus</span>
+                    <span class="stat-value" id="menu-count">0</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label"><i class="fa-solid fa-qrcode"></i> Scannable</span>
+                    <span class="stat-value" id="qr-count">0</span>
+                </div>
+                <div class="stat-card"
+                    style="background: linear-gradient(135deg, rgba(255,107,107,0.12), rgba(255,142,83,0.08)); border-color: rgba(255,107,107,0.2);">
+                    <span class="stat-label"><i class="fa-solid fa-bolt"></i> App Status</span>
+                    <span class="stat-value" style="font-size:1.1rem;color:var(--success);">Live ✓</span>
+                </div>
+            </div>
+
+            <!-- Section Header -->
+            <div class="section-header">
+                <h2>Restaurants &nbsp;<span class="badge badge-accent" id="list-count-badge">0</span></h2>
+                <div class="search-wrap">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="search" class="form-control" id="search-input" placeholder="Search restaurants…"
+                        style="font-size:0.85rem;">
+                </div>
+            </div>
+
+            <!-- Grid -->
+            <div class="customer-grid" id="menu-grid"></div>
+
+        </div>
+    </div>
+
+    <!-- ADD / EDIT MENU MODAL -->
+    <div class="modal-overlay" id="menu-modal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h2 id="modal-title">Add Menu</h2>
+                <button class="modal-close-btn" data-close-modal="menu-modal" aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="menu-form" novalidate>
+
+                <div class="form-section-title"><i class="fa-solid fa-shop"></i> &nbsp;Restaurant Details</div>
+
+                <div class="form-group">
+                    <label for="f-name">Restaurant Name <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="f-name" class="form-control" placeholder="The Great Eatery" required>
+                </div>
+
+                <div class="form-row">
+                    <!-- Logo upload -->
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Restaurant Logo</label>
+                        <label class="photo-upload-area" for="f-logo">
+                            <img id="logo-preview" class="photo-preview" src="" alt="Preview">
+                            <div id="logo-placeholder" class="photo-placeholder">
+                                <i class="fa-solid fa-image"></i>
+                            </div>
+                            <div class="photo-upload-text">
+                                <h4>Logo</h4>
+                                <p>Click to select</p>
+                            </div>
+                            <input type="file" id="f-logo" accept="image/*">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Text Menu Builder -->
+                <div class="form-section-title"
+                    style="margin-top:24px; display:flex; justify-content:space-between; align-items:center;">
+                    <span><i class="fa-solid fa-list-ul"></i> &nbsp;Menu Builder</span>
+                    <button type="button" class="btn btn-secondary" style="padding:4px 10px; font-size:0.75rem;"
+                        onclick="addCategory()">
+                        <i class="fa-solid fa-plus"></i> Add Category
+                    </button>
+                </div>
+
+                <div id="menu-builder-container" style="display:flex; flex-direction:column; gap:16px;">
+                    <!-- Categories will be injected here -->
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close-modal="menu-modal"
+                        style="flex:1;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="flex:2;">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Menu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SHARE / QR MODAL -->
+    <div class="modal-overlay" id="share-modal">
+        <div class="modal-box" style="max-width:460px; text-align:center;">
+            <div class="modal-header" style="justify-content:flex-end; margin-bottom:16px;">
+                <button class="modal-close-btn" data-close-modal="share-modal" aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="qr-modal-header">
+                <h2 style="font-size:1.2rem;">Share <span class="text-gradient"
+                        style="background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"
+                        id="share-menu-name">Menu</span>
+                </h2>
+                <p style="color:var(--text-muted);font-size:0.85rem;">Scan this QR or copy the link to view the menu</p>
+            </div>
+
+            <div class="qr-wrapper">
+                <div id="qrcode-container"></div>
+            </div>
+
+            <button class="btn btn-secondary btn-full" id="btn-download-qr" style="margin-bottom:16px;">
+                <i class="fa-solid fa-download"></i> Download QR Code
+            </button>
+
+            <div class="form-group" style="text-align:left;">
+                <label>Direct Menu Link</label>
+                <div class="link-row">
+                    <button class="btn btn-secondary btn-icon" id="btn-copy-link" title="Copy link">
+                        <i class="fa-solid fa-copy"></i>
+                    </button>
+                    <input type="text" id="share-link-input" class="form-control" readonly>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE CONFIRM MODAL -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal-box" style="max-width:380px; text-align:center;">
+            <div style="font-size:3rem; margin-bottom:12px;">🗑️</div>
+            <h2 style="margin-bottom:8px;">Delete Menu?</h2>
+            <p style="font-size:0.9rem; margin-bottom:28px;">
+                Are you sure you want to delete <strong id="delete-menu-name"
+                    style="color:var(--text-primary)"></strong>? This action cannot be undone.
+            </p>
+            <div class="modal-footer" style="margin-top:0;">
+                <button class="btn btn-secondary" data-close-modal="delete-modal" style="flex:1;">Cancel</button>
+                <button class="btn btn-danger" id="confirm-delete-btn" style="flex:1.5;">
+                    <i class="fa-solid fa-trash"></i> Yes, Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="restaurant-app.js"></script>
+    <script>
+        // Live search filter
+        document.getElementById('search-input').addEventListener('input', function () {
+            const q = this.value.toLowerCase();
+            document.querySelectorAll('.customer-card').forEach(card => {
+                const name = card.querySelector('h4')?.textContent.toLowerCase() || '';
+                card.style.display = name.includes(q) ? 'flex' : 'none';
+            });
+        });
+
+        // Keep header count synced
+        document.addEventListener('DOMContentLoaded', () => {
+            const observer = new MutationObserver(() => {
+                const count = menus.length;
+                const el = document.getElementById('header-count');
+                const badge = document.getElementById('list-count-badge');
+                const qrEl = document.getElementById('qr-count');
+                if (el) el.textContent = count === 1 ? '1 menu' : `${count} menus`;
+                if (badge) badge.textContent = count;
+                if (qrEl) qrEl.textContent = count;
+            });
+            observer.observe(document.getElementById('menu-grid'), { childList: true, subtree: true });
+        });
+    </script>
+</body>
+
+</html>

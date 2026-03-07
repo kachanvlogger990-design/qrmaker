@@ -3,15 +3,217 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=login.html">
-    <script>
-        window.location.href = "login.html";
-    </script>
-    <title>Redirecting...</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VCard & Menu QR Portal</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .portal-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .portal-container {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .portal-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .portal-header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+        }
+
+        .portal-header p {
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .portal-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        .portal-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-xl);
+            padding: 40px 32px;
+            text-align: center;
+            text-decoration: none;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .portal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--accent-grad);
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .portal-card:hover {
+            transform: translateY(-8px);
+            background: var(--bg-card-hover);
+            border-color: rgba(108, 99, 255, 0.3);
+            box-shadow: var(--shadow-md);
+        }
+
+        .portal-card:hover::before {
+            opacity: 1;
+        }
+
+        .portal-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.4rem;
+            margin-bottom: 24px;
+            transition: var(--transition);
+            border: 1px solid var(--border);
+        }
+
+        .portal-card.vcard .portal-icon {
+            color: #48d0ff;
+            background: rgba(72, 208, 255, 0.1);
+            border-color: rgba(72, 208, 255, 0.2);
+        }
+
+        .portal-card.restaurant .portal-icon {
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            border-color: rgba(255, 107, 107, 0.2);
+        }
+
+        .portal-card:hover .portal-icon {
+            transform: scale(1.1);
+        }
+
+        .portal-card.vcard:hover .portal-icon {
+            box-shadow: 0 10px 30px rgba(72, 208, 255, 0.25);
+        }
+
+        .portal-card.restaurant:hover .portal-icon {
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.25);
+        }
+
+        .portal-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .portal-card p {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .portal-btn {
+            margin-top: 24px;
+            padding: 10px 24px;
+            border-radius: var(--radius-full);
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .portal-card:hover .portal-btn {
+            background: var(--accent-grad);
+            border-color: transparent;
+            color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .portal-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .portal-card {
+                padding: 32px 24px;
+            }
+        }
+    </style>
 </head>
 
 <body>
-    <p>Redirecting to login page...</p>
+    <!-- Animated background is inherited from style.css body::before -->
+
+    <div class="portal-page fade-in">
+        <div class="portal-container">
+
+            <div class="portal-header">
+                <h1>Welcome to <span class="text-gradient">QR Platform</span></h1>
+                <p>Select a product suite below to manage your digital presence and generate beautiful QR codes
+                    instantly.</p>
+            </div>
+
+            <div class="portal-grid">
+
+                <!-- Business VCard Option -->
+                <a href="login.html" class="portal-card vcard">
+                    <div class="portal-icon">
+                        <i class="fa-solid fa-id-card-clip"></i>
+                    </div>
+                    <h3>Business VCard</h3>
+                    <p>Create and manage premium digital interactive business cards with contact saving capabilities.
+                    </p>
+                    <div class="portal-btn">
+                        Manage VCards <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </a>
+
+                <!-- Restaurant Menu Option -->
+                <a href="restaurant-login.html" class="portal-card restaurant">
+                    <div class="portal-icon">
+                        <i class="fa-solid fa-utensils"></i>
+                    </div>
+                    <h3>Restaurant Menus</h3>
+                    <p>Upload your restaurant menu and logo to generate scan-to-order frictionless QR code displays.</p>
+                    <div class="portal-btn">
+                        Manage Menus <i class="fa-solid fa-arrow-right"></i>
+                    </div>
+                </a>
+
+            </div>
+
+        </div>
+    </div>
+
 </body>
 
 </html>

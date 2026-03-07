@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Login | QR Menu Admin</title>
+    <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        .login-form-wrap {
+            animation: fadeIn 0.5s ease;
+        }
+
+        .input-icon-wrap {
+            position: relative;
+        }
+
+        .input-icon-wrap .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+
+        .input-icon-wrap .form-control {
+            padding-left: 40px;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            padding: 0;
+            transition: color 0.2s;
+        }
+
+        .toggle-password:hover {
+            color: var(--text-primary);
+        }
+
+        .login-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+        }
+
+        .login-divider::before,
+        .login-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .hint-box {
+            background: rgba(255, 107, 107, 0.06);
+            border: 1px solid rgba(255, 107, 107, 0.2);
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            line-height: 1.8;
+        }
+
+        .hint-box strong {
+            color: #ff8c8c;
+        }
+
+        .brand .logo-wrap {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            box-shadow: 0 0 40px rgba(255, 107, 107, 0.25);
+        }
+
+        .text-gradient-rest {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .btn-rest {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            box-shadow: 0 4px 20px rgba(255, 107, 107, 0.35);
+        }
+
+        .btn-rest:hover {
+            box-shadow: 0 6px 28px rgba(255, 107, 107, 0.5);
+        }
+    </style>
+</head>
+
+<body data-page="restaurant-login">
+
+    <div class="login-page">
+        <div class="login-card glass-card login-form-wrap">
+
+            <!-- Brand -->
+            <div class="brand">
+                <div class="logo-wrap">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                <h1>Restaurant <span class="text-gradient-rest">Admin</span></h1>
+                <p>Sign in to manage your scannable QR menus</p>
+            </div>
+
+            <!-- Error Message -->
+            <div class="error-msg" id="error-msg">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <span>Invalid email or password. Please try again.</span>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" autocomplete="on" novalidate>
+                <div class="form-group">
+                    <label for="login-email">Email Address</label>
+                    <div class="input-icon-wrap">
+                        <i class="fa-solid fa-envelope input-icon"></i>
+                        <input type="email" id="login-email" class="form-control" placeholder="menu@restaurant.com"
+                            autocomplete="email" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <div class="input-icon-wrap">
+                        <i class="fa-solid fa-lock input-icon"></i>
+                        <input type="password" id="login-password" class="form-control" placeholder="••••••••"
+                            autocomplete="current-password" required>
+                        <button type="button" class="toggle-password" id="toggle-pass" aria-label="Show password">
+                            <i class="fa-solid fa-eye" id="toggle-pass-icon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-rest btn-primary btn-full btn-lg" style="margin-top: 8px;">
+                    <i class="fa-solid fa-right-to-bracket"></i>
+                    Sign In
+                </button>
+                <a href="index.html" class="btn btn-secondary btn-full btn-lg"
+                    style="margin-top: 12px; text-decoration:none;">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    Back to Portal
+                </a>
+            </form>
+
+            <div class="login-divider">default credentials</div>
+
+            <div class="hint-box">
+                <strong>Email:</strong> menu@restaurant.com<br>
+                <strong>Password:</strong> admin123
+            </div>
+
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script src="restaurant-app.js"></script>
+    <script>
+        // Toggle password visibility
+        document.getElementById('toggle-pass').addEventListener('click', () => {
+            const input = document.getElementById('login-password');
+            const icon = document.getElementById('toggle-pass-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye-slash';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye';
+            }
+        });
+    </script>
+</body>
+
+</html>

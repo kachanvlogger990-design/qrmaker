@@ -85,7 +85,7 @@ async function saveCustomers(list) {
         await db.ref('customers').set(updates);
     } catch (e) {
         console.error("Failed to save to Firebase:", e);
-        showToast('Error saving to Firebase', 'error');
+        throw e;
     }
 }
 
