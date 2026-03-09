@@ -247,11 +247,12 @@ function renderCustomers() {
     }
 
     grid.innerHTML = customers.map((c, i) => `
-    <div class="customer-card fade-in" style="animation-delay:${i * 0.06}s">
+    <div class="customer-card fade-in" style="animation-delay:${i * 0.06}s; ${c.isActive === false ? 'opacity:0.6;' : ''}">
         <img class="customer-avatar" src="${c.photo || 'https://api.dicebear.com/7.x/initials/svg?seed=' + encodeURIComponent(c.name)}" alt="${c.name}">
-        <div class="customer-info">
+        <div class="customer-info" style="display:flex; flex-direction:column; align-items:flex-start;">
             <h4>${c.name}</h4>
             <p>${c.company || c.email || ''}</p>
+            ${c.isActive === false ? '<span style="font-size:0.65rem; background:rgba(255,79,107,0.15); color:var(--danger); padding:2px 8px; border-radius:12px; margin-top:6px; border:1px solid rgba(255,79,107,0.3);">Inactive</span>' : ''}
         </div>
         <div class="customer-actions">
             <button class="btn btn-secondary btn-icon" onclick="openShareModal('${c.id}')" title="Share / QR">
@@ -272,6 +273,7 @@ function openAddModal() {
     editingId = null;
     document.getElementById('modal-title').textContent = 'Add New Customer';
     document.getElementById('customer-form').reset();
+    document.getElementById('f-isactive').checked = true;
     resetPhotoPreview();
     openModal('customer-modal');
 }
@@ -292,8 +294,10 @@ function openEditModal(id) {
     document.getElementById('f-location').value = c.location || '';
     document.getElementById('f-linkedin').value = c.linkedin || '';
     document.getElementById('f-whatsapp').value = c.whatsapp || '';
+    document.getElementById('f-gpay').value = c.gpay || '';
     document.getElementById('f-custom-label').value = c.customLabel || '';
     document.getElementById('f-custom-link').value = c.customLink || '';
+    document.getElementById('f-isactive').checked = c.isActive !== false;
 
     // Restore photo preview
     if (c.photo) {
@@ -337,8 +341,10 @@ async function handleCustomerSubmit(e) {
             location: document.getElementById('f-location').value.trim(),
             linkedin: document.getElementById('f-linkedin').value.trim(),
             whatsapp: document.getElementById('f-whatsapp').value.trim(),
+            gpay: document.getElementById('f-gpay').value.trim(),
             customLabel: document.getElementById('f-custom-label').value.trim(),
             customLink: document.getElementById('f-custom-link').value.trim(),
+            isActive: document.getElementById('f-isactive').checked,
             photo,
             createdAt: editingId
                 ? (customers.find(c => c.id === editingId)?.createdAt || Date.now())
@@ -521,6 +527,11 @@ async function initCard() {
         return;
     }
 
+    if (data.isActive === false) {
+        showCardError('This profile is temporarily unavailable.');
+        return;
+    }
+
     renderCard(data);
 
     document.getElementById('save-contact-btn')?.addEventListener('click', () => {
@@ -570,6 +581,7 @@ function renderCard(data) {
     setDetailRow('det-location', data.location && 'View on Map', data.location);
     setDetailRow('det-linkedin', data.linkedin && prettyLink(data.linkedin), data.linkedin);
     setDetailRow('det-wa', data.whatsapp, `https://wa.me/${(data.whatsapp || '').replace(/\D/g, '')}`);
+    setDetailRow('det-gpay', data.gpay, `tel:${data.gpay}`);
     setDetailRow('det-custom', data.customLabel ? `${data.customLabel}` : data.customLink && prettyLink(data.customLink), data.customLink);
 }
 

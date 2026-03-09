@@ -172,10 +172,74 @@
             line-height: 1.4;
             padding-right: 40px;
         }
+
+        /* Splash Screen */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-primary);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.6s ease-in-out, visibility 0.6s;
+        }
+
+        .splash-screen.hide {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .splash-logo-wrap {
+            width: 100px;
+            height: 100px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #fff;
+            box-shadow: 0 8px 30px rgba(255, 107, 107, 0.4);
+            animation: pulse-splash 1.5s infinite alternate;
+        }
+
+        .splash-logo-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 20px;
+            display: none;
+            /* Shown dynamically if URL exists */
+        }
+
+        @keyframes pulse-splash {
+            0% {
+                transform: scale(0.95);
+                box-shadow: 0 0 0 rgba(255, 107, 107, 0.4);
+            }
+
+            100% {
+                transform: scale(1.05);
+                box-shadow: 0 10px 40px rgba(255, 107, 107, 0.6);
+            }
+        }
     </style>
 </head>
 
 <body data-page="restaurant-menu">
+
+    <!-- Splash Screen -->
+    <div id="splash-screen" class="splash-screen">
+        <div class="splash-logo-wrap" id="splash-logo-wrap">
+            <i class="fa-solid fa-utensils" id="splash-icon"></i>
+            <img id="splash-img" src="" alt="Restaurant Logo">
+        </div>
+    </div>
 
     <div class="menu-container fade-in">
 

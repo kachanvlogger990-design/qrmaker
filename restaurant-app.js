@@ -169,11 +169,12 @@ function renderMenusGrid() {
     }
 
     grid.innerHTML = menus.map((m, i) => `
-    <div class="customer-card fade-in" style="animation-delay:${i * 0.06}s">
+    <div class="customer-card fade-in" style="animation-delay:${i * 0.06}s; ${m.isActive === false ? 'opacity:0.6;' : ''}">
         <img class="customer-avatar" src="${m.logo || 'https://api.dicebear.com/7.x/initials/svg?seed=' + encodeURIComponent(m.name)}" alt="${m.name}">
-        <div class="customer-info">
+        <div class="customer-info" style="display:flex; flex-direction:column; align-items:flex-start;">
             <h4>${m.name}</h4>
             <p>Menu Active</p>
+            ${m.isActive === false ? '<span style="font-size:0.65rem; background:rgba(255,79,107,0.15); color:var(--danger); padding:2px 8px; border-radius:12px; margin-top:6px; border:1px solid rgba(255,79,107,0.3);">Inactive</span>' : ''}
         </div>
         <div class="customer-actions">
             <button class="btn btn-secondary btn-icon" onclick="openShareModal('${m.id}')" title="Share / QR">
@@ -193,6 +194,7 @@ function openAddModal() {
     editingId = null;
     document.getElementById('modal-title').textContent = 'Add Menu';
     document.getElementById('menu-form').reset();
+    document.getElementById('f-isactive').checked = true;
     resetPreview('logo-preview', 'logo-placeholder');
     tempMenuData = [];
     renderBuilder();
@@ -206,6 +208,7 @@ function openEditModal(id) {
 
     document.getElementById('modal-title').textContent = 'Edit Menu';
     document.getElementById('f-name').value = m.name || '';
+    document.getElementById('f-isactive').checked = m.isActive !== false;
 
     if (m.logo) setPreview('logo-preview', 'logo-placeholder', m.logo);
     else resetPreview('logo-preview', 'logo-placeholder');
@@ -253,6 +256,7 @@ async function handleMenuSubmit(e) {
             name: nameVal,
             logo,
             menuData: tempMenuData,
+            isActive: document.getElementById('f-isactive').checked,
             createdAt: editingId ? (menus.find(m => m.id === editingId)?.createdAt || Date.now()) : Date.now()
         };
 
@@ -509,6 +513,11 @@ async function initMenu() {
             return;
         }
 
+        if (data.isActive === false) {
+            showMenuError('This menu is temporarily unavailable.');
+            return;
+        }
+
         renderMenuViewer(data);
     } catch (e) {
         console.error("Firebase fetch error", e);
@@ -525,11 +534,18 @@ function renderMenuViewer(data) {
     document.getElementById('restaurant-title').textContent = data.name;
 
     const logo = document.getElementById('restaurant-logo');
+    const splashImg = document.getElementById('splash-img');
+    const splashIcon = document.getElementById('splash-icon');
+
     if (data.logo) {
         logo.src = data.logo;
+        splashImg.src = data.logo;
+        splashImg.style.display = 'block';
+        splashIcon.style.display = 'none';
     } else {
         logo.style.display = 'none';
         document.getElementById('restaurant-icon-fallback').style.display = 'flex';
+        // Splash defaults to the utensils icon
     }
 
     const container = document.getElementById('menu-text-container');
@@ -557,6 +573,12 @@ function renderMenuViewer(data) {
             </div>
         `;
     }
+
+    // Fade out splash screen after minimum delay
+    setTimeout(() => {
+        const splash = document.getElementById('splash-screen');
+        if (splash) splash.classList.add('hide');
+    }, 1200);
 }
 
 function showMenuError(msg) {
