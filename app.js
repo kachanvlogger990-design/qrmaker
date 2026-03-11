@@ -125,8 +125,36 @@ function generateVCard(data) {
 
     if (data.website) lines.push(`URL;TYPE=WORK:${data.website}`);
     if (data.linkedin) lines.push(`URL;TYPE=LinkedIn:${data.linkedin}`);
-    if (data.whatsapp) lines.push(`X-WHATSAPP:${data.whatsapp}`);
-    if (data.customLink) lines.push(`URL;TYPE=${data.customLabel || 'Custom'}:${data.customLink}`);
+
+    // WhatsApp with custom label for better compatibility
+    if (data.whatsapp) {
+        lines.push(`item1.TEL:${data.whatsapp}`);
+        lines.push(`item1.X-ABLabel:WhatsApp`);
+        lines.push(`X-WHATSAPP:${data.whatsapp}`);
+    }
+
+    // Google Pay
+    if (data.gpay) {
+        lines.push(`item2.TEL:${data.gpay}`);
+        lines.push(`item2.X-ABLabel:Google Pay`);
+    }
+
+    // Location Link
+    if (data.location) {
+        lines.push(`item3.URL:${data.location}`);
+        lines.push(`item3.X-ABLabel:Location`);
+    }
+
+    // Dynamic Custom Fields
+    if (data.customFields && Array.isArray(data.customFields)) {
+        data.customFields.forEach((field, index) => {
+            const itemIdx = index + 10; // Start at 10 to avoid collisions with hardcoded items
+            if (field.label && field.link) {
+                lines.push(`item${itemIdx}.URL:${field.link}`);
+                lines.push(`item${itemIdx}.X-ABLabel:${field.label}`);
+            }
+        });
+    }
 
     // Embed photo in vCard
     if (data.photo && data.photo.startsWith('data:image')) {
@@ -274,6 +302,7 @@ function openAddModal() {
     document.getElementById('modal-title').textContent = 'Add New Customer';
     document.getElementById('customer-form').reset();
     document.getElementById('f-isactive').checked = true;
+    document.getElementById('dynamic-fields-container').innerHTML = '';
     resetPhotoPreview();
     openModal('customer-modal');
 }
@@ -295,8 +324,10 @@ function openEditModal(id) {
     document.getElementById('f-linkedin').value = c.linkedin || '';
     document.getElementById('f-whatsapp').value = c.whatsapp || '';
     document.getElementById('f-gpay').value = c.gpay || '';
-    document.getElementById('f-custom-label').value = c.customLabel || '';
-    document.getElementById('f-custom-link').value = c.customLink || '';
+
+    // Render dynamic fields
+    renderDynamicFields(c.customFields || []);
+
     document.getElementById('f-isactive').checked = c.isActive !== false;
 
     // Restore photo preview
@@ -342,8 +373,7 @@ async function handleCustomerSubmit(e) {
             linkedin: document.getElementById('f-linkedin').value.trim(),
             whatsapp: document.getElementById('f-whatsapp').value.trim(),
             gpay: document.getElementById('f-gpay').value.trim(),
-            customLabel: document.getElementById('f-custom-label').value.trim(),
-            customLink: document.getElementById('f-custom-link').value.trim(),
+            customFields: collectDynamicFields(),
             isActive: document.getElementById('f-isactive').checked,
             photo,
             createdAt: editingId
@@ -453,6 +483,42 @@ function resetPhotoPreview() {
     document.getElementById('photo-placeholder').style.display = 'flex';
 }
 
+// Dynamic Fields Helpers
+function addDynamicFieldRow(data = { label: '', link: '' }) {
+    const container = document.getElementById('dynamic-fields-container');
+    const row = document.createElement('div');
+    row.className = 'form-row dynamic-field-row';
+    row.style.marginTop = '12px';
+    row.innerHTML = `
+        <div class="form-group" style="flex:1; margin-bottom:0;">
+            <input type="text" class="form-control df-label" placeholder="Label (e.g. Instagram)" value="${data.label}">
+        </div>
+        <div class="form-group" style="flex:2; margin-bottom:0;">
+            <input type="url" class="form-control df-link" placeholder="URL (https://...)" value="${data.link}">
+        </div>
+        <button type="button" class="btn btn-danger btn-icon" onclick="this.closest('.dynamic-field-row').remove()" style="margin-top:0; height:42px;">
+            <i class="fa-solid fa-trash"></i>
+        </button>
+    `;
+    container.appendChild(row);
+}
+
+function renderDynamicFields(fields) {
+    const container = document.getElementById('dynamic-fields-container');
+    container.innerHTML = '';
+    fields.forEach(f => addDynamicFieldRow(f));
+}
+
+function collectDynamicFields() {
+    const fields = [];
+    document.querySelectorAll('.dynamic-field-row').forEach(row => {
+        const label = row.querySelector('.df-label').value.trim();
+        const link = row.querySelector('.df-link').value.trim();
+        if (label || link) fields.push({ label, link });
+    });
+    return fields;
+}
+
 /* Bind all admin events */
 function bindAdminEvents() {
     // Add button
@@ -477,6 +543,9 @@ function bindAdminEvents() {
 
     // Download QR button
     document.getElementById('btn-download-qr')?.addEventListener('click', downloadQR);
+
+    // Add dynamic field row
+    document.getElementById('btn-add-field')?.addEventListener('click', () => addDynamicFieldRow());
 
     // Close modal on overlay click
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
@@ -582,7 +651,31 @@ function renderCard(data) {
     setDetailRow('det-linkedin', data.linkedin && prettyLink(data.linkedin), data.linkedin);
     setDetailRow('det-wa', data.whatsapp, `https://wa.me/${(data.whatsapp || '').replace(/\D/g, '')}`);
     setDetailRow('det-gpay', data.gpay, `tel:${data.gpay}`);
-    setDetailRow('det-custom', data.customLabel ? `${data.customLabel}` : data.customLink && prettyLink(data.customLink), data.customLink);
+
+    // Render dynamic fields
+    const dynContainer = document.getElementById('dynamic-details-container');
+    if (dynContainer) {
+        dynContainer.innerHTML = '';
+        if (data.customFields && Array.isArray(data.customFields)) {
+            data.customFields.forEach(f => {
+                if (!f.label || !f.link) return;
+                const row = document.createElement('a');
+                row.className = 'detail-item';
+                row.href = f.link;
+                row.target = '_blank';
+                row.rel = 'noopener';
+                row.innerHTML = `
+                    <div class="detail-icon link"><i class="fa-solid fa-link"></i></div>
+                    <div class="detail-content">
+                        <div class="detail-label">${f.label}</div>
+                        <div class="detail-value">${prettyLink(f.link)}</div>
+                    </div>
+                    <i class="fa-solid fa-arrow-up-right-from-square detail-arrow"></i>
+                `;
+                dynContainer.appendChild(row);
+            });
+        }
+    }
 }
 
 function setLink(id, href, visible) {
