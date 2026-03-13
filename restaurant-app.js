@@ -171,7 +171,7 @@ function renderMenusGrid() {
     grid.innerHTML = menus.map((m, i) => `
     <div class="customer-card fade-in" style="animation-delay:${i * 0.06}s; ${m.isActive === false ? 'opacity:0.6;' : ''}">
         <img class="customer-avatar" src="${m.logo || 'https://api.dicebear.com/7.x/initials/svg?seed=' + encodeURIComponent(m.name)}" alt="${m.name}">
-        <div class="customer-info" style="display:flex; flex-direction:column; align-items:flex-start;">
+        <div class="customer-info">
             <h4>${m.name}</h4>
             <p>Menu Active</p>
             ${m.isActive === false ? '<span style="font-size:0.65rem; background:rgba(255,79,107,0.15); color:var(--danger); padding:2px 8px; border-radius:12px; margin-top:6px; border:1px solid rgba(255,79,107,0.3);">Inactive</span>' : ''}

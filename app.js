@@ -112,24 +112,43 @@ function buildCardURL(data) {
 //  vCard Generator (with base64 photo support)
 // =====================================================
 function generateVCard(data) {
-    const lines = [
+    const nameParts = (data.name || '').trim().split(/\s+/);
+    const lastName = nameParts.length > 1 ? nameParts.pop() : '';
+    const firstName = nameParts.join(' ');
+
+    // Revision date for better sync
+    const now = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    const uid = data.id || `u_${Date.now().toString(36)}`;
+
+    let lines = [
         'BEGIN:VCARD',
         'VERSION:3.0',
-        `FN:${data.name || ''}`,
-        `N:${(data.name || '').split(' ').reverse().join(';')};;`,
-        `ORG:${data.company || ''}`,
-        `TITLE:${data.title || ''}`,
-        `TEL;TYPE=CELL,VOICE:${data.phone || ''}`,
-        `EMAIL;TYPE=WORK,INTERNET:${data.email || ''}`,
+        'PRODID:-//VCard Manager//EN',
+        `REV:${now}`,
+        `UID:${uid}`,
+        `FN;CHARSET=utf-8:${data.name || ''}`,
+        `N;CHARSET=utf-8:${lastName};${firstName};;;`,
     ];
 
+    if (data.company) lines.push(`ORG;CHARSET=utf-8:${data.company}`);
+    if (data.title) lines.push(`TITLE;CHARSET=utf-8:${data.title}`);
+    if (data.phone) lines.push(`TEL;TYPE=CELL,VOICE;VALUE=uri:tel:${data.phone.replace(/\s+/g, '')}`);
+    if (data.email) lines.push(`EMAIL;TYPE=WORK,INTERNET:${data.email}`);
     if (data.website) lines.push(`URL;TYPE=WORK:${data.website}`);
-    if (data.linkedin) lines.push(`URL;TYPE=LinkedIn:${data.linkedin}`);
 
-    // WhatsApp with custom label for better compatibility
+    // LinkedIn
+    if (data.linkedin) {
+        lines.push(`URL;TYPE=LinkedIn:${data.linkedin}`);
+        lines.push(`X-SOCIALPROFILE;TYPE=linkedin:${data.linkedin}`);
+    }
+
+    // WhatsApp - Standardizing for both Android and iOS
     if (data.whatsapp) {
+        const waNum = data.whatsapp.replace(/\D/g, '');
+        const waUrl = `https://wa.me/${waNum}`;
         lines.push(`item1.TEL:${data.whatsapp}`);
         lines.push(`item1.X-ABLabel:WhatsApp`);
+        lines.push(`X-SOCIALPROFILE;TYPE=whatsapp:${waUrl}`);
         lines.push(`X-WHATSAPP:${data.whatsapp}`);
     }
 
@@ -139,33 +158,47 @@ function generateVCard(data) {
         lines.push(`item2.X-ABLabel:Google Pay`);
     }
 
-    // Location Link
+    // Location
     if (data.location) {
         lines.push(`item3.URL:${data.location}`);
         lines.push(`item3.X-ABLabel:Location`);
     }
 
-    // Dynamic Custom Fields
+    // Custom Fields
     if (data.customFields && Array.isArray(data.customFields)) {
         data.customFields.forEach((field, index) => {
-            const itemIdx = index + 10; // Start at 10 to avoid collisions with hardcoded items
             if (field.label && field.link) {
+                const itemIdx = index + 4; // Start from 4 to avoid collision
                 lines.push(`item${itemIdx}.URL:${field.link}`);
                 lines.push(`item${itemIdx}.X-ABLabel:${field.label}`);
             }
         });
     }
 
-    // Embed photo in vCard
+    // Note for catch-all data
+    const notes = [];
+    if (data.whatsapp) notes.push(`WhatsApp: ${data.whatsapp}`);
+    if (data.gpay) notes.push(`Google Pay: ${data.gpay}`);
+    if (data.location) notes.push(`Location: ${data.location}`);
+    if (data.customFields) {
+        data.customFields.forEach(f => { if (f.label && f.link) notes.push(`${f.label}: ${f.link}`); });
+    }
+    if (notes.length > 0) {
+        lines.push(`NOTE;CHARSET=utf-8:Additional Details:\\n${notes.join('\\n')}`);
+    }
+
+    // Photo - Improved encoding for mobile display
     if (data.photo && data.photo.startsWith('data:image')) {
-        const base64 = data.photo.split(',')[1];
-        const mimeRaw = data.photo.split(';')[0].split(':')[1]; // e.g. image/jpeg
-        const type = mimeRaw.split('/')[1].toUpperCase(); // JPEG / PNG
-        lines.push(`PHOTO;ENCODING=BASE64;TYPE=${type}:${base64}`);
+        const parts = data.photo.split(',');
+        const base64 = parts[1];
+        const mime = parts[0].split(';')[0].split(':')[1];
+        const type = mime.split('/')[1].toUpperCase();
+        // VERSION 3.0 expects TYPE=JPEG, not IMAGE/JPEG
+        lines.push(`PHOTO;TYPE=${type};ENCODING=b:${base64}`);
     }
 
     lines.push('END:VCARD');
-    return lines.join('\r\n');
+    return lines.join('\r\n') + '\r\n';
 }
 
 function downloadVCard(data) {
@@ -277,7 +310,7 @@ function renderCustomers() {
     grid.innerHTML = customers.map((c, i) => `
     <div class="customer-card fade-in" style="animation-delay:${i * 0.06}s; ${c.isActive === false ? 'opacity:0.6;' : ''}">
         <img class="customer-avatar" src="${c.photo || 'https://api.dicebear.com/7.x/initials/svg?seed=' + encodeURIComponent(c.name)}" alt="${c.name}">
-        <div class="customer-info" style="display:flex; flex-direction:column; align-items:flex-start;">
+        <div class="customer-info">
             <h4>${c.name}</h4>
             <p>${c.company || c.email || ''}</p>
             ${c.isActive === false ? '<span style="font-size:0.65rem; background:rgba(255,79,107,0.15); color:var(--danger); padding:2px 8px; border-radius:12px; margin-top:6px; border:1px solid rgba(255,79,107,0.3);">Inactive</span>' : ''}
